@@ -1,116 +1,205 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import Button from '../common/Button';
-import Card from '../common/Card';
-import { Send, Zap, GitBranch } from 'lucide-react';
-import { ModelName } from '../../types';
+import { useState } from "react";
+import { motion } from "framer-motion";
+import Button from "../common/Button";
+import Card from "../common/Card";
+import { Send, Zap, GitBranch } from "lucide-react";
+import { ModelName } from "../../types";
 
-interface PromptInputProps {
-  onSubmit: (prompt: string, mode: 'fast' | 'delphi', models: ModelName[]) => void;
-  loading: boolean;
-}
+export default function PromptInput() {
+  const [prompt, setPrompt] = useState("");
+  const [mode, setMode] = useState<"fast" | "delphi">("delphi");
+  const [selectedModels, setSelectedModels] = useState<ModelName[]>([
+    "GPT",
+    "Gemini",
+    "Claude",
+    "DeepSeek"
+  ]);
 
-export default function PromptInput({ onSubmit, loading }: PromptInputProps) {
-  const [prompt, setPrompt] = useState('');
-  const [mode, setMode] = useState<'fast' | 'delphi'>('delphi');
-  const [selectedModels, setSelectedModels] = useState<ModelName[]>(['GPT', 'Gemini', 'Claude', 'DeepSeek']);
-
-  const handleSubmit = () => {
-    if (prompt.trim() && selectedModels.length > 0) {
-      onSubmit(prompt, mode, selectedModels);
-    }
-  };
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const toggleModel = (model: ModelName) => {
-    setSelectedModels(prev =>
-      prev.includes(model) ? prev.filter(m => m !== model) : [...prev, model]
+    setSelectedModels((prev) =>
+      prev.includes(model)
+        ? prev.filter((m) => m !== model)
+        : [...prev, model]
     );
   };
 
-  return (
-    <Card glass className="p-6">
-      <div className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">Your Question</label>
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Ask a complex question that requires deep analysis and multiple perspectives..."
-            className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all"
-            rows={6}
-            disabled={loading}
-          />
-        </div>
+  const handleSubmit = async () => {
+    if (!prompt.trim() || selectedModels.length === 0) return;
 
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-300 mb-2">Mode</label>
-            <div className="flex gap-2">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setMode('fast')}
-                disabled={loading}
-                className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${
-                  mode === 'fast'
-                    ? 'border-blue-500 bg-blue-500/10 text-blue-400'
-                    : 'border-gray-700 bg-gray-900/50 text-gray-400 hover:border-gray-600'
-                }`}
-              >
-                <Zap className="w-4 h-4" />
-                Fast Mode
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setMode('delphi')}
-                disabled={loading}
-                className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${
-                  mode === 'delphi'
-                    ? 'border-violet-500 bg-violet-500/10 text-violet-400'
-                    : 'border-gray-700 bg-gray-900/50 text-gray-400 hover:border-gray-600'
-                }`}
-              >
-                <GitBranch className="w-4 h-4" />
-                Delphi Mode
-              </motion.button>
-            </div>
+    try {
+      setLoading(true);
+      setError(null);
+      setResult(null);
+
+      const response = await fetch("http://localhost:5000/api/ask", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          prompt,
+          mode,
+          models: selectedModels
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Backend request failed");
+      }
+
+      const data = await response.json();
+      setResult(data.data);
+    } catch (err: any) {
+      console.error(err);
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-5xl mx-auto">
+      <Card glass className="p-6">
+        <div className="space-y-6">
+          {/* Prompt */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Your Question
+            </label>
+            <textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Ask a complex question that requires deep analysis and multiple perspectives..."
+              className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              rows={6}
+              disabled={loading}
+            />
           </div>
 
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-300 mb-2">Models</label>
-            <div className="grid grid-cols-2 gap-2">
-              {(['GPT', 'Gemini', 'Claude', 'DeepSeek'] as ModelName[]).map(model => (
+          {/* Mode + Models */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* Mode */}
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Mode
+              </label>
+              <div className="flex gap-2">
                 <motion.button
-                  key={model}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => toggleModel(model)}
+                  onClick={() => setMode("fast")}
                   disabled={loading}
-                  className={`py-2 px-3 rounded-lg border-2 text-sm transition-all ${
-                    selectedModels.includes(model)
-                      ? 'border-blue-500 bg-blue-500/10 text-blue-400'
-                      : 'border-gray-700 bg-gray-900/50 text-gray-400 hover:border-gray-600'
+                  className={`flex-1 py-3 px-4 rounded-lg border-2 flex items-center justify-center gap-2 ${
+                    mode === "fast"
+                      ? "border-blue-500 bg-blue-500/10 text-blue-400"
+                      : "border-gray-700 bg-gray-900/50 text-gray-400"
                   }`}
                 >
-                  {model}
+                  <Zap className="w-4 h-4" />
+                  Fast Mode
                 </motion.button>
-              ))}
+
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setMode("delphi")}
+                  disabled={loading}
+                  className={`flex-1 py-3 px-4 rounded-lg border-2 flex items-center justify-center gap-2 ${
+                    mode === "delphi"
+                      ? "border-violet-500 bg-violet-500/10 text-violet-400"
+                      : "border-gray-700 bg-gray-900/50 text-gray-400"
+                  }`}
+                >
+                  <GitBranch className="w-4 h-4" />
+                  Delphi Mode
+                </motion.button>
+              </div>
+            </div>
+
+            {/* Models */}
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Models
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {(["GPT", "Gemini", "Claude", "DeepSeek"] as ModelName[]).map(
+                  (model) => (
+                    <motion.button
+                      key={model}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => toggleModel(model)}
+                      disabled={loading}
+                      className={`py-2 px-3 rounded-lg border-2 text-sm ${
+                        selectedModels.includes(model)
+                          ? "border-blue-500 bg-blue-500/10 text-blue-400"
+                          : "border-gray-700 bg-gray-900/50 text-gray-400"
+                      }`}
+                    >
+                      {model}
+                    </motion.button>
+                  )
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        <Button
-          onClick={handleSubmit}
-          disabled={!prompt.trim() || selectedModels.length === 0 || loading}
-          loading={loading}
-          className="w-full"
-          size="lg"
-        >
-          {loading ? 'Processing...' : 'Analyze with AI Consensus'}
-          {!loading && <Send className="w-5 h-5" />}
-        </Button>
-      </div>
-    </Card>
+          {/* Submit */}
+          <Button
+            onClick={handleSubmit}
+            disabled={!prompt.trim() || selectedModels.length === 0 || loading}
+            loading={loading}
+            className="w-full"
+            size="lg"
+          >
+            {loading ? "Processing..." : "Analyze with AI Consensus"}
+            {!loading && <Send className="w-5 h-5" />}
+          </Button>
+
+          {/* Error */}
+          {error && (
+            <p className="text-red-400 text-sm text-center">{error}</p>
+          )}
+        </div>
+      </Card>
+
+      {/* Results */}
+      {result && (
+        <Card glass className="p-6 mt-6 space-y-4 text-white">
+          <h2 className="text-lg font-bold">AI Responses</h2>
+
+          {result.gpt && (
+            <div>
+              <h3 className="font-semibold text-blue-400">GPT</h3>
+              <p className="text-sm text-gray-300 whitespace-pre-wrap">
+                {result.gpt}
+              </p>
+            </div>
+          )}
+
+          {result.claude && (
+            <div>
+              <h3 className="font-semibold text-violet-400">Claude</h3>
+              <p className="text-sm text-gray-300 whitespace-pre-wrap">
+                {result.claude}
+              </p>
+            </div>
+          )}
+
+          {result.gemini && (
+            <div>
+              <h3 className="font-semibold text-green-400">Gemini</h3>
+              <p className="text-sm text-gray-300 whitespace-pre-wrap">
+                {result.gemini}
+              </p>
+            </div>
+          )}
+        </Card>
+      )}
+    </div>
   );
 }
