@@ -32,7 +32,9 @@ const GraphState = Annotation.Root({
   nvidia_confidence: Annotation(),
   gemini_confidence: Annotation(),
 
-  finalAnswer: Annotation()
+  finalAnswer: Annotation(),
+  bestModel: Annotation(),
+  refinedAnswers: Annotation()
 });
 
 /* ================== GRAPH ================== */
@@ -52,7 +54,7 @@ export function createGraph() {
   graph.addNode("refineNvidia", nvidiaRefineNode);
   graph.addNode("refineGemini", geminiRefineNode);
 
-  /* ===== FINAL SELECTION ===== */
+ 
   graph.addNode("selectBest", selectBestNode);
 
   graph.setEntryPoint("runGPT");

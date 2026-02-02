@@ -16,5 +16,8 @@ export const graphState = {
   nvidia_confidence: { value: 0 },
   gemini_confidence: { value: 0 },
 
-  finalAnswer: { value: "" }
+  finalAnswer: { value: "" },
+  bestModel: { value: "" },
+refinedAnswers: { value: [] }
+
 };
