@@ -12,7 +12,7 @@ import {
   selectBestNode
 } from "./nodes.js";
 
-/* ================== STATE ================== */
+/* ================= STATE ================= */
 
 const GraphState = Annotation.Root({
   question: Annotation(),
@@ -37,25 +37,30 @@ const GraphState = Annotation.Root({
   refinedAnswers: Annotation()
 });
 
-/* ================== GRAPH ================== */
+/* ================= GRAPH ================= */
 
 export function createGraph() {
   const graph = new StateGraph(GraphState);
 
-  /* ===== BASE MODELS ===== */
+  /* ---------- BASE MODELS ---------- */
+
   graph.addNode("runGPT", gptNode);
   graph.addNode("runDeepSeek", deepseekNode);
   graph.addNode("runNvidia", nvidiaNode);
   graph.addNode("runGemini", geminiNode);
 
-  /* ===== REFINEMENT ===== */
+  /* ---------- REFINEMENT ---------- */
+
   graph.addNode("refineGPT", gptRefineNode);
   graph.addNode("refineDeepSeek", deepseekRefineNode);
   graph.addNode("refineNvidia", nvidiaRefineNode);
   graph.addNode("refineGemini", geminiRefineNode);
 
- 
+  /* ---------- FINAL SELECTION ---------- */
+
   graph.addNode("selectBest", selectBestNode);
+
+  /* ---------- FLOW ---------- */
 
   graph.setEntryPoint("runGPT");
 

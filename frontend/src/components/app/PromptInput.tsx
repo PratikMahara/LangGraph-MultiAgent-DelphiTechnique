@@ -12,7 +12,7 @@ export default function PromptInput() {
     "GPT",
     "Gemini",
     "Claude",
-    "DeepSeek"
+    "DeepSeek",
   ]);
 
   const [loading, setLoading] = useState(false);
@@ -21,9 +21,7 @@ export default function PromptInput() {
 
   const toggleModel = (model: ModelName) => {
     setSelectedModels((prev) =>
-      prev.includes(model)
-        ? prev.filter((m) => m !== model)
-        : [...prev, model]
+      prev.includes(model) ? prev.filter((m) => m !== model) : [...prev, model],
     );
   };
 
@@ -35,16 +33,14 @@ export default function PromptInput() {
       setError(null);
       setResult(null);
 
-      const response = await fetch("http://localhost:5000/api/ask", {
+      const response = await fetch("http://localhost:5000/api/analyze", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           prompt,
-          mode,
-          models: selectedModels
-        })
+        }),
       });
 
       if (!response.ok) {
@@ -52,7 +48,22 @@ export default function PromptInput() {
       }
 
       const data = await response.json();
-      setResult(data.data);
+      const apiData = data;
+      console.log(apiData)
+
+      // Convert refinedAnswers → object usable by UI
+      const formattedResult: any = {};
+
+      apiData.refinedAnswers.forEach((item: any) => {
+        const key = item.model.toLowerCase(); // gpt, gemini, etc.
+        formattedResult[key] = item.answer;
+      });
+
+      // optional: store extra info
+      formattedResult.finalAnswer = apiData.finalAnswer;
+      formattedResult.bestModel = apiData.bestModel;
+
+      setResult(formattedResult);
     } catch (err: any) {
       console.error(err);
       setError("Something went wrong. Please try again.");
@@ -142,7 +153,7 @@ export default function PromptInput() {
                     >
                       {model}
                     </motion.button>
-                  )
+                  ),
                 )}
               </div>
             </div>
@@ -161,9 +172,7 @@ export default function PromptInput() {
           </Button>
 
           {/* Error */}
-          {error && (
-            <p className="text-red-400 text-sm text-center">{error}</p>
-          )}
+          {error && <p className="text-red-400 text-sm text-center">{error}</p>}
         </div>
       </Card>
 
@@ -171,7 +180,12 @@ export default function PromptInput() {
       {result && (
         <Card glass className="p-6 mt-6 space-y-4 text-white">
           <h2 className="text-lg font-bold">AI Responses</h2>
-
+          {result.finalAnswer && (
+            <div className="mb-4 p-4 bg-green-900/30 border border-green-700 rounded-lg">
+              <h3 className="text-green-400 font-semibold">Final Answer</h3>
+              <p className="text-gray-200 text-sm mt-1">{result.finalAnswer}</p>
+            </div>
+          )}
           {result.gpt && (
             <div>
               <h3 className="font-semibold text-blue-400">GPT</h3>
@@ -180,16 +194,6 @@ export default function PromptInput() {
               </p>
             </div>
           )}
-
-          {result.claude && (
-            <div>
-              <h3 className="font-semibold text-violet-400">Claude</h3>
-              <p className="text-sm text-gray-300 whitespace-pre-wrap">
-                {result.claude}
-              </p>
-            </div>
-          )}
-
           {result.gemini && (
             <div>
               <h3 className="font-semibold text-green-400">Gemini</h3>
@@ -198,6 +202,22 @@ export default function PromptInput() {
               </p>
             </div>
           )}
+          {result.deepseek && (
+            <div>
+              <h3 className="font-semibold text-purple-400">DeepSeek</h3>
+              <p className="text-sm text-gray-300 whitespace-pre-wrap">
+                {result.deepseek}
+              </p>
+            </div>
+          )}
+          {result.nvidia && (
+            <div>
+              <h3 className="font-semibold text-yellow-400">NVIDIA</h3>
+              <p className="text-sm text-gray-300 whitespace-pre-wrap">
+                {result.nvidia}
+              </p>
+            </div>
+          )}{" "}
         </Card>
       )}
     </div>

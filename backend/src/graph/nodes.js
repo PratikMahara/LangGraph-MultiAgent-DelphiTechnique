@@ -4,47 +4,71 @@ dotenv.config();
 import { OpenRouter } from "@openrouter/sdk";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 
-console.log(`The api key of GEMINI:${process.env.GOOGLE_API_KEY}`)
+import OpenAI from "openai";
 const openrouter = new OpenRouter({
-  apiKey: process.env.OPENROUTER_API_KEY 
+  apiKey: process.env.OPENROUTER_API_KEY,
 });
-
+const openai = new OpenAI({
+  baseURL: "https://api.deepseek.com",
+  apiKey: process.env.DEEPSEEK_API_KEY,
+});
 const gemini = new ChatGoogleGenerativeAI({
   model: "gemini-3-flash-preview",
   apiKey: process.env.GOOGLE_API_KEY,
-  temperature: 0.7
+  temperature: 0.7,
 });
 
+/* ---------- SAFE CALL ---------- */
+
+async function safeCall(payload) {
+  try {
+    const res = await openrouter.chat.send(payload);
+    return res.choices?.[0]?.message?.content || "";
+  } catch (err) {
+    console.error("Model failed:", err.message);
+    return "";
+  }
+}
+
+/* ---------- BASE MODELS ---------- */
 
 export async function gptNode(state) {
-  const res = await openrouter.chat.send({
-    model: "openai/gpt-oss-120b:free",
-    messages: [{ role: "user", content: state.question }]
+  const content = await safeCall({
+    model: "arcee-ai/trinity-large-preview:free",
+    messages: [{ role: "user", content: state.question }],
   });
-  return { gpt: res.choices[0].message.content };
+
+  return { gpt: content };
 }
 
 export async function deepseekNode(state) {
-  const res = await openrouter.chat.send({
-    model: "tngtech/deepseek-r1t2-chimera:free",
-    messages: [{ role: "user", content: state.question }]
+  const content = await safeCall({
+  
+    model: "stepfun/step-3.5-flash:free",
+    messages: [{ role: "user", content: state.question }],
   });
-  return { deepseek: res.choices[0].message.content };
-}
 
+  return { deepseek: content };
+}
 export async function nvidiaNode(state) {
-  const res = await openrouter.chat.send({
-    model: "nvidia/nemotron-3-nano-30b-a3b:free",
-    messages: [{ role: "user", content: state.question }]
+  const content = await safeCall({
+    model: "liquid/lfm-2.5-1.2b-thinking:free",
+    messages: [{ role: "user", content: state.question }],
   });
-  return { nvidia: res.choices[0].message.content };
+
+  return { nvidia: content };
 }
 
 export async function geminiNode(state) {
-  const res = await gemini.invoke(state.question);
-  return { gemini: res.content };
+  try {
+    const res = await gemini.invoke(state.question);
+    return { gemini: res.content };
+  } catch {
+    return { gemini: "" };
+  }
 }
 
+/* ---------- PROMPT ---------- */
 
 function buildRefinePrompt(self, others) {
   return `
@@ -56,133 +80,135 @@ ${self}
 Other answers:
 ${others}
 
-STRICT RULES (DO NOT BREAK):
+RULES:
 - Improve ONLY your own answer
-- Be extremely concise and specific
-- Maximum length: 4 short bullet points OR 4 short sentences
-- No introductions, no conclusions
-- No explanations, no examples
-- No filler words
-- No markdown
-- No references to other models
-- Output ONLY valid JSON
-- Confidence must be an integer between 0 and 100
-
-If a shorter answer is possible, choose the shorter one.
-
-Return EXACTLY this format and nothing else:
+- Maximum 4 short sentences
+- No explanation
+- Output JSON only
 
 {
-  "answer": "short, specific answer here",
-  "confidence": 85
+  "answer": "refined answer",
+  "confidence": 0-100
 }
 `;
 }
 
-function safeJSONParse(text) {
-  if (!text || typeof text !== "string") {
-    return { answer: "", confidence: 0 };
-  }
+/* ---------- SAFE JSON ---------- */
 
+function safeJSON(text) {
   try {
     return JSON.parse(text);
   } catch {
-    try {
-      const match = text.match(/\{[\s\S]*\}/);
-
-      if (!match) {
-        throw new Error("No JSON object found");
-      }
-
-      const cleaned = match[0]
-        .replace(/[\u0000-\u001F]+/g, " ")
-        .replace(/\n/g, " ")
-        .replace(/\r/g, " ")
-        .replace(/\t/g, " ");
-
-      return JSON.parse(cleaned);
-    } catch {
-      return {
-        answer: text.replace(/[\u0000-\u001F]+/g, " ").trim(),
-        confidence: 50
-      };
-    }
+    return { answer: text, confidence: 50 };
   }
 }
 
-
+/* ---------- REFINEMENT ---------- */
 
 export async function gptRefineNode(state) {
-  const res = await openrouter.chat.send({
-    model: "openai/gpt-oss-120b:free",
-    messages: [{
-      role: "user",
-      content: buildRefinePrompt(
-        state.gpt,
-        `DeepSeek:\n${state.deepseek}\nNVIDIA:\n${state.nvidia}\nGemini:\n${state.gemini}`
-      )
-    }]
+  const content = await safeCall({
+    model: "arcee-ai/trinity-large-preview:free",
+    messages: [
+      {
+        role: "user",
+        content: buildRefinePrompt(
+          state.gpt,
+          `DeepSeek:${state.deepseek}\nMistral:${state.nvidia}\nGemini:${state.gemini}`,
+        ),
+      },
+    ],
   });
 
-const parsed = safeJSONParse(res.choices[0].message.content);
+  const parsed = safeJSON(content);
   return { gpt_refined: parsed.answer, gpt_confidence: parsed.confidence };
 }
 
 export async function deepseekRefineNode(state) {
-  const res = await openrouter.chat.send({
-    model: "tngtech/deepseek-r1t2-chimera:free",
-    messages: [{
-      role: "user",
-      content: buildRefinePrompt(
-        state.deepseek,
-        `GPT:\n${state.gpt}\nNVIDIA:\n${state.nvidia}\nGemini:\n${state.gemini}`
-      )
-    }]
+  const content = await safeCall({
+    model: "stepfun/step-3.5-flash:free",
+    messages: [
+      {
+        role: "user",
+        content: buildRefinePrompt(
+          state.deepseek,
+          `GPT:${state.gpt}\nMistral:${state.nvidia}\nGemini:${state.gemini}`,
+        ),
+      },
+    ],
   });
 
-const parsed = safeJSONParse(res.choices[0].message.content);
-  return { deepseek_refined: parsed.answer, deepseek_confidence: parsed.confidence };
-}
-
-export async function nvidiaRefineNode(state) {
-  const res = await openrouter.chat.send({
-    model: "nvidia/nemotron-3-nano-30b-a3b:free",
-    messages: [{
-      role: "user",
-      content: buildRefinePrompt(
-        state.nvidia,
-        `GPT:\n${state.gpt}\nDeepSeek:\n${state.deepseek}\nGemini:\n${state.gemini}`
-      )
-    }]
-  });
-
-const parsed = safeJSONParse(res.choices[0].message.content);
-  return { nvidia_refined: parsed.answer, nvidia_confidence: parsed.confidence };
-}
-
-export async function geminiRefineNode(state) {
-  const res = await gemini.invoke(
-    buildRefinePrompt(
-      state.gemini || "",
-      `GPT:\n${state.gpt}\nDeepSeek:\n${state.deepseek}\nNVIDIA:\n${state.nvidia}`
-    )
-  );
-
-  const parsed = safeJSONParse(res?.content);
+  const parsed = safeJSON(content);
   return {
-    gemini_refined: parsed.answer,
-    gemini_confidence: parsed.confidence
+    deepseek_refined: parsed.answer,
+    deepseek_confidence: parsed.confidence,
   };
 }
 
+export async function nvidiaRefineNode(state) {
+  const content = await safeCall({
+    model: "liquid/lfm-2.5-1.2b-thinking:free",
+    messages: [
+      {
+        role: "user",
+        content: buildRefinePrompt(
+          state.nvidia,
+          `GPT:${state.gpt}\nDeepSeek:${state.deepseek}\nGemini:${state.gemini}`,
+        ),
+      },
+    ],
+  });
 
+  const parsed = safeJSON(content);
+  return {
+    nvidia_refined: parsed.answer,
+    nvidia_confidence: parsed.confidence,
+  };
+}
+
+export async function geminiRefineNode(state) {
+  try {
+    const res = await gemini.invoke(
+      buildRefinePrompt(
+        state.gemini,
+        `GPT:${state.gpt}\nDeepSeek:${state.deepseek}\nMistral:${state.nvidia}`,
+      ),
+    );
+
+    const parsed = safeJSON(res.content);
+
+    return {
+      gemini_refined: parsed.answer,
+      gemini_confidence: parsed.confidence,
+    };
+  } catch {
+    return { gemini_refined: "", gemini_confidence: 0 };
+  }
+}
+
+/* ---------- SELECT BEST ---------- */
 
 export function selectBestNode(state) {
   const options = [
-    { model: "gpt", answer: state.gpt_refined, confidence: state.gpt_confidence },
-    { model: "deepseek", answer: state.deepseek_refined, confidence: state.deepseek_confidence },
-    { model: "nvidia", answer: state.nvidia_refined, confidence: state.nvidia_confidence },
-    { model: "gemini", answer: state.gemini_refined, confidence: state.gemini_confidence }
+    {
+      model: "gpt",
+      answer: state.gpt_refined,
+      confidence: state.gpt_confidence,
+    },
+    {
+      model: "deepseek",
+      answer: state.deepseek_refined,
+      confidence: state.deepseek_confidence,
+    },
+    {
+      model: "nvidia",
+      answer: state.nvidia_refined,
+      confidence: state.nvidia_confidence,
+    },
+    {
+      model: "gemini",
+      answer: state.gemini_refined,
+      confidence: state.gemini_confidence,
+    },
   ];
 
   options.sort((a, b) => b.confidence - a.confidence);
@@ -190,6 +216,6 @@ export function selectBestNode(state) {
   return {
     finalAnswer: options[0].answer,
     bestModel: options[0].model,
-    refinedAnswers: options
+    refinedAnswers: options,
   };
 }

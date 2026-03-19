@@ -1,23 +1,22 @@
 export const graphState = {
-  question: { value: "" },
+  question: "",
 
-  gpt: { value: "" },
-  deepseek: { value: "" },
-  nvidia: { value: "" },
-  gemini: { value: "" },
+  gpt: "",
+  deepseek: "",
+  nvidia: "",
+  gemini: "",
 
-  gpt_refined: { value: "" },
-  deepseek_refined: { value: "" },
-  nvidia_refined: { value: "" },
-  gemini_refined: { value: "" },
+  gpt_refined: "",
+  deepseek_refined: "",
+  nvidia_refined: "",
+  gemini_refined: "",
 
-  gpt_confidence: { value: 0 },
-  deepseek_confidence: { value: 0 },
-  nvidia_confidence: { value: 0 },
-  gemini_confidence: { value: 0 },
+  gpt_confidence: 0,
+  deepseek_confidence: 0,
+  nvidia_confidence: 0,
+  gemini_confidence: 0,
 
-  finalAnswer: { value: "" },
-  bestModel: { value: "" },
-refinedAnswers: { value: [] }
-
+  finalAnswer: "",
+  bestModel: "",
+  refinedAnswers: []
 };
