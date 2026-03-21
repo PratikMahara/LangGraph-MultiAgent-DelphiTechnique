@@ -5,7 +5,16 @@ import Card from "../common/Card";
 import { Send, Zap, GitBranch } from "lucide-react";
 import { ModelName } from "../../types";
 
-export default function PromptInput() {
+interface PromptInputProps {
+  onSubmit: (
+    prompt: string,
+    mode: "fast" | "delphi",
+    models: ModelName[]
+  ) => void;
+  loading: boolean;
+}
+
+export default function PromptInput({ onSubmit, loading }: PromptInputProps) {
   const [prompt, setPrompt] = useState("");
   const [mode, setMode] = useState<"fast" | "delphi">("delphi");
   const [selectedModels, setSelectedModels] = useState<ModelName[]>([
@@ -15,68 +24,25 @@ export default function PromptInput() {
     "DeepSeek",
   ]);
 
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
-
   const toggleModel = (model: ModelName) => {
     setSelectedModels((prev) =>
-      prev.includes(model) ? prev.filter((m) => m !== model) : [...prev, model],
+      prev.includes(model)
+        ? prev.filter((m) => m !== model)
+        : [...prev, model]
     );
   };
 
-  const handleSubmit = async () => {
+  const handleSubmitClick = () => {
     if (!prompt.trim() || selectedModels.length === 0) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-      setResult(null);
-
-      const response = await fetch("http://localhost:5000/api/analyze", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          prompt,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Backend request failed");
-      }
-
-      const data = await response.json();
-      const apiData = data;
-      console.log(apiData)
-
-      // Convert refinedAnswers → object usable by UI
-      const formattedResult: any = {};
-
-      apiData.refinedAnswers.forEach((item: any) => {
-        const key = item.model.toLowerCase(); // gpt, gemini, etc.
-        formattedResult[key] = item.answer;
-      });
-
-      // optional: store extra info
-      formattedResult.finalAnswer = apiData.finalAnswer;
-      formattedResult.bestModel = apiData.bestModel;
-
-      setResult(formattedResult);
-    } catch (err: any) {
-      console.error(err);
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+    onSubmit(prompt, mode, selectedModels);
   };
 
   return (
     <div className="max-w-5xl mx-auto">
       <Card glass className="p-6">
         <div className="space-y-6">
-          {/* Prompt */}
+
+          {/* 🔥 Prompt */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
               Your Question
@@ -91,8 +57,9 @@ export default function PromptInput() {
             />
           </div>
 
-          {/* Mode + Models */}
+          {/* 🔥 Mode + Models */}
           <div className="flex flex-col sm:flex-row gap-4">
+
             {/* Mode */}
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -104,7 +71,7 @@ export default function PromptInput() {
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setMode("fast")}
                   disabled={loading}
-                  className={`flex-1 py-3 px-4 rounded-lg border-2 flex items-center justify-center gap-2 ${
+                  className={`flex-1 py-3 px-4 rounded-lg border-2 flex items-center justify-center gap-2 transition ${
                     mode === "fast"
                       ? "border-blue-500 bg-blue-500/10 text-blue-400"
                       : "border-gray-700 bg-gray-900/50 text-gray-400"
@@ -119,7 +86,7 @@ export default function PromptInput() {
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setMode("delphi")}
                   disabled={loading}
-                  className={`flex-1 py-3 px-4 rounded-lg border-2 flex items-center justify-center gap-2 ${
+                  className={`flex-1 py-3 px-4 rounded-lg border-2 flex items-center justify-center gap-2 transition ${
                     mode === "delphi"
                       ? "border-violet-500 bg-violet-500/10 text-violet-400"
                       : "border-gray-700 bg-gray-900/50 text-gray-400"
@@ -145,7 +112,7 @@ export default function PromptInput() {
                       whileTap={{ scale: 0.98 }}
                       onClick={() => toggleModel(model)}
                       disabled={loading}
-                      className={`py-2 px-3 rounded-lg border-2 text-sm ${
+                      className={`py-2 px-3 rounded-lg border-2 text-sm transition ${
                         selectedModels.includes(model)
                           ? "border-blue-500 bg-blue-500/10 text-blue-400"
                           : "border-gray-700 bg-gray-900/50 text-gray-400"
@@ -153,15 +120,15 @@ export default function PromptInput() {
                     >
                       {model}
                     </motion.button>
-                  ),
+                  )
                 )}
               </div>
             </div>
           </div>
 
-          {/* Submit */}
+          {/* 🔥 Submit */}
           <Button
-            onClick={handleSubmit}
+            onClick={handleSubmitClick}
             disabled={!prompt.trim() || selectedModels.length === 0 || loading}
             loading={loading}
             className="w-full"
@@ -171,55 +138,8 @@ export default function PromptInput() {
             {!loading && <Send className="w-5 h-5" />}
           </Button>
 
-          {/* Error */}
-          {error && <p className="text-red-400 text-sm text-center">{error}</p>}
         </div>
       </Card>
-
-      {/* Results */}
-      {result && (
-        <Card glass className="p-6 mt-6 space-y-4 text-white">
-          <h2 className="text-lg font-bold">AI Responses</h2>
-          {result.finalAnswer && (
-            <div className="mb-4 p-4 bg-green-900/30 border border-green-700 rounded-lg">
-              <h3 className="text-green-400 font-semibold">Final Answer</h3>
-              <p className="text-gray-200 text-sm mt-1">{result.finalAnswer}</p>
-            </div>
-          )}
-          {result.gpt && (
-            <div>
-              <h3 className="font-semibold text-blue-400">GPT</h3>
-              <p className="text-sm text-gray-300 whitespace-pre-wrap">
-                {result.gpt}
-              </p>
-            </div>
-          )}
-          {result.gemini && (
-            <div>
-              <h3 className="font-semibold text-green-400">Gemini</h3>
-              <p className="text-sm text-gray-300 whitespace-pre-wrap">
-                {result.gemini}
-              </p>
-            </div>
-          )}
-          {result.deepseek && (
-            <div>
-              <h3 className="font-semibold text-purple-400">DeepSeek</h3>
-              <p className="text-sm text-gray-300 whitespace-pre-wrap">
-                {result.deepseek}
-              </p>
-            </div>
-          )}
-          {result.nvidia && (
-            <div>
-              <h3 className="font-semibold text-yellow-400">NVIDIA</h3>
-              <p className="text-sm text-gray-300 whitespace-pre-wrap">
-                {result.nvidia}
-              </p>
-            </div>
-          )}{" "}
-        </Card>
-      )}
     </div>
   );
 }
