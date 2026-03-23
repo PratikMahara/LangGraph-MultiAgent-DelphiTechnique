@@ -52,7 +52,7 @@ export async function deepseekNode(state) {
 }
 export async function nvidiaNode(state) {
   const content = await safeCall({
-    model: "liquid/lfm-2.5-1.2b-thinking:free",
+    model: "qwen/qwen3-next-80b-a3b-instruct:free",
     messages: [{ role: "user", content: state.question }],
   });
 
@@ -146,7 +146,7 @@ export async function deepseekRefineNode(state) {
 
 export async function nvidiaRefineNode(state) {
   const content = await safeCall({
-    model: "liquid/lfm-2.5-1.2b-thinking:free",
+    model: "qwen/qwen3-next-80b-a3b-instruct:free",
     messages: [
       {
         role: "user",
