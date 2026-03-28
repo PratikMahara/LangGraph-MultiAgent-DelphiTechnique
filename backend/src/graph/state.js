@@ -16,6 +16,12 @@ export const graphState = {
   nvidia_confidence: 0,
   gemini_confidence: 0,
 
+  // ✅ ADD THESE (CRITICAL)
+  gpt_preferred: null,
+  deepseek_preferred: null,
+  nvidia_preferred: null,
+  gemini_preferred: null,
+
   finalAnswer: "",
   bestModel: "",
   refinedAnswers: []

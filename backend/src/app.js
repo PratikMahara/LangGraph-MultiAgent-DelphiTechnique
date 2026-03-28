@@ -4,7 +4,12 @@ import { createGraph } from "./graph/graph.js";
 
 const app = express();
 
-app.use(cors());
+app.use(cors(
+{
+  origin: "http://localhost:5173",
+  credentials: true
+}
+));
 app.use(express.json());
 
 const graph = createGraph();
@@ -33,10 +38,11 @@ app.post("/api/analyze", async (req, res) => {
     );
 
     res.json({
-      finalAnswer: result.finalAnswer,
-      bestModel: result.bestModel,
-      refinedAnswers: result.refinedAnswers,
-    });
+  finalAnswer: result.finalAnswer,
+  bestModel: result.bestModel,
+  refinedAnswers: result.refinedAnswers,
+  peerReviews: result.peerReviews, // ✅ ADD THIS
+});
   } catch (error) {
     console.error("Graph execution error:", error);
     res.status(500).json({ error: error.message });
