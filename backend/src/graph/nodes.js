@@ -4,12 +4,14 @@ dotenv.config();
 import { OpenRouter } from "@openrouter/sdk";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 
+/* ---------- INIT ---------- */
+
 const openrouter = new OpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY,
 });
 
 const gemini = new ChatGoogleGenerativeAI({
-  model: "gemini-3-flash-preview",
+  model: "gemini-2.5-flash",
   apiKey: process.env.GOOGLE_API_KEY,
   temperature: 0.7,
 });
@@ -19,8 +21,7 @@ const gemini = new ChatGoogleGenerativeAI({
 async function safeCall(payload) {
   try {
     const res = await openrouter.chat.send(payload);
-    const content = res.choices?.[0]?.message?.content || "";
-    return content;
+    return res.choices?.[0]?.message?.content || "";
   } catch (err) {
     console.error("Model failed:", err.message);
     return "";
@@ -31,28 +32,25 @@ async function safeCall(payload) {
 
 export async function gptNode(state) {
   const content = await safeCall({
-    model: "arcee-ai/trinity-large-preview:free",
+    model: "openai/gpt-4o-mini",
     messages: [{ role: "user", content: state.question }],
   });
-
   return { gpt: content };
 }
 
 export async function deepseekNode(state) {
   const content = await safeCall({
-    model: "liquid/lfm-2.5-1.2b-thinking:free",
+    model: "deepseek/deepseek-chat",
     messages: [{ role: "user", content: state.question }],
   });
-
   return { deepseek: content };
 }
 
 export async function nvidiaNode(state) {
   const content = await safeCall({
-    model: "nvidia/nemotron-3-super-120b-a12b:free",
+    model: "nvidia/llama-3.1-nemotron-70b-instruct",
     messages: [{ role: "user", content: state.question }],
   });
-
   return { nvidia: content };
 }
 
@@ -67,8 +65,10 @@ export async function geminiNode(state) {
 
 /* ---------- PROMPT ---------- */
 
-function buildRefinePrompt(self, others) {
+function buildRefinePrompt(self, others, selfName) {
   return `
+You are ${selfName}.
+
 You are refining ONLY your own answer after seeing peer answers.
 
 Your answer:
@@ -77,21 +77,27 @@ ${self}
 Other answers:
 ${others}
 
-RULES:
+STRICT RULES:
 - Improve ONLY your own answer
-- Choose ONE AI whose answer you agree with MOST
-- DO NOT use LaTeX like \\boxed{}
-- Return ONLY valid JSON
+- You MUST choose ONE AI whose answer you agree with MOST
+- You CANNOT choose yourself (${selfName})
+- Choose ONLY from other models
+- RETURN ONLY JSON
+- NO explanation
+- NO markdown
+- NO extra text
+
+FORMAT:
 
 {
   "answer": "refined answer",
-  "confidence": number,
-  "preferred_ai": "GPT | DeepSeek | Nvidia | Gemini"
+  "confidence": number (0-100),
+  "preferred_ai": "GPT" | "DeepSeek" | "Nvidia" | "Gemini"
 }
 `;
 }
 
-/* ---------- SAFE JSON (STRONG) ---------- */
+/* ---------- SAFE JSON ---------- */
 
 function extractJSON(text) {
   const cleaned = text
@@ -106,33 +112,37 @@ function extractJSON(text) {
 function detectAI(text) {
   if (!text) return null;
 
-  if (/\\boxed\{(.*?)\}/i.test(text)) {
-    return text.match(/\\boxed\{(.*?)\}/i)[1];
-  }
+  const lower = text.toLowerCase();
 
-  if (/gpt/i.test(text)) return "GPT";
-  if (/deepseek/i.test(text)) return "DeepSeek";
-  if (/nvidia/i.test(text)) return "Nvidia";
-  if (/gemini/i.test(text)) return "Gemini";
+  if (lower.includes("gpt")) return "GPT";
+  if (lower.includes("deepseek")) return "DeepSeek";
+  if (lower.includes("nvidia")) return "Nvidia";
+  if (lower.includes("gemini")) return "Gemini";
 
   return null;
 }
 
-function safeJSON(text) {
+function safeJSON(text, fallbackAI) {
   try {
     const jsonString = extractJSON(text);
     const parsed = JSON.parse(jsonString);
 
     return {
       answer: parsed.answer || text,
-      confidence: parsed.confidence ?? 50,
-      preferred_ai: parsed.preferred_ai || detectAI(text), // ✅ fallback
+      confidence:
+        typeof parsed.confidence === "number"
+          ? parsed.confidence
+          : 50,
+      preferred_ai:
+        parsed.preferred_ai ||
+        detectAI(text) ||
+        fallbackAI,
     };
   } catch {
     return {
       answer: text.trim(),
       confidence: 50,
-      preferred_ai: detectAI(text), // ✅ FORCE DETECTION
+      preferred_ai: detectAI(text) || fallbackAI,
     };
   }
 }
@@ -140,75 +150,78 @@ function safeJSON(text) {
 /* ---------- REFINEMENT ---------- */
 
 function ensureAI(ai, fallback) {
-  return ai || fallback; // 🔥 NEVER NULL
+  return ai || fallback;
 }
 
 export async function gptRefineNode(state) {
   const content = await safeCall({
-    model: "arcee-ai/trinity-large-preview:free",
+    model: "openai/gpt-4o-mini",
     messages: [
       {
         role: "user",
         content: buildRefinePrompt(
           state.gpt,
-          `DeepSeek:${state.deepseek}\nNvidia:${state.nvidia}\nGemini:${state.gemini}`
+          `DeepSeek:${state.deepseek}\nNvidia:${state.nvidia}\nGemini:${state.gemini}`,
+          "GPT"
         ),
       },
     ],
   });
 
-  const parsed = safeJSON(content);
+  const parsed = safeJSON(content, "GPT");
 
   return {
     gpt_refined: parsed.answer,
     gpt_confidence: parsed.confidence,
-    gpt_preferred: ensureAI(parsed.preferred_ai, "GPT"), // ✅ FIX
+    gpt_preferred: ensureAI(parsed.preferred_ai, "GPT"),
   };
 }
 
 export async function deepseekRefineNode(state) {
   const content = await safeCall({
-    model: "liquid/lfm-2.5-1.2b-thinking:free",
+    model: "deepseek/deepseek-chat",
     messages: [
       {
         role: "user",
         content: buildRefinePrompt(
           state.deepseek,
-          `GPT:${state.gpt}\nNvidia:${state.nvidia}\nGemini:${state.gemini}`
+          `GPT:${state.gpt}\nNvidia:${state.nvidia}\nGemini:${state.gemini}`,
+          "DeepSeek"
         ),
       },
     ],
   });
 
-  const parsed = safeJSON(content);
+  const parsed = safeJSON(content, "DeepSeek");
 
   return {
     deepseek_refined: parsed.answer,
     deepseek_confidence: parsed.confidence,
-    deepseek_preferred: ensureAI(parsed.preferred_ai, "GPT"), // ✅ FIX
+    deepseek_preferred: ensureAI(parsed.preferred_ai, "DeepSeek"),
   };
 }
 
 export async function nvidiaRefineNode(state) {
   const content = await safeCall({
-    model: "nvidia/nemotron-3-super-120b-a12b:free",
+    model: "nvidia/llama-3.1-nemotron-70b-instruct",
     messages: [
       {
         role: "user",
         content: buildRefinePrompt(
           state.nvidia,
-          `GPT:${state.gpt}\nDeepSeek:${state.deepseek}\nGemini:${state.gemini}`
+          `GPT:${state.gpt}\nDeepSeek:${state.deepseek}\nGemini:${state.gemini}`,
+          "Nvidia"
         ),
       },
     ],
   });
 
-  const parsed = safeJSON(content);
+  const parsed = safeJSON(content, "Nvidia");
 
   return {
     nvidia_refined: parsed.answer,
     nvidia_confidence: parsed.confidence,
-    nvidia_preferred: ensureAI(parsed.preferred_ai, "GPT"), // ✅ FIX
+    nvidia_preferred: ensureAI(parsed.preferred_ai, "Nvidia"),
   };
 }
 
@@ -217,78 +230,53 @@ export async function geminiRefineNode(state) {
     const res = await gemini.invoke(
       buildRefinePrompt(
         state.gemini,
-        `GPT:${state.gpt}\nDeepSeek:${state.deepseek}\nNvidia:${state.nvidia}`
+        `GPT:${state.gpt}\nDeepSeek:${state.deepseek}\nNvidia:${state.nvidia}`,
+        "Gemini"
       )
     );
 
-    const parsed = safeJSON(res.content);
+    const parsed = safeJSON(res.content, "Gemini");
 
     return {
       gemini_refined: parsed.answer,
       gemini_confidence: parsed.confidence,
-      gemini_preferred: ensureAI(parsed.preferred_ai, "GPT"), // ✅ FIX
+      gemini_preferred: ensureAI(parsed.preferred_ai, "Gemini"),
     };
   } catch {
     return {
       gemini_refined: "",
       gemini_confidence: 0,
-      gemini_preferred: "GPT", // ✅ NEVER NULL
+      gemini_preferred: "Gemini",
     };
   }
 }
 
-/* ---------- BUILD PEER REVIEWS ---------- */
+/* ---------- PEER REVIEWS (NEVER EMPTY) ---------- */
 
 function buildPeerReviews(state) {
-  const reviews = [];
-
-  const models = [
-    { name: "GPT", preferred: state.gpt_preferred },
-    { name: "DeepSeek", preferred: state.deepseek_preferred },
-    { name: "Nvidia", preferred: state.nvidia_preferred },
-    { name: "Gemini", preferred: state.gemini_preferred },
+  return [
+    { model: "GPT", preferred_ai: state.gpt_preferred || "GPT" },
+    { model: "DeepSeek", preferred_ai: state.deepseek_preferred || "DeepSeek" },
+    { model: "Nvidia", preferred_ai: state.nvidia_preferred || "Nvidia" },
+    { model: "Gemini", preferred_ai: state.gemini_preferred || "Gemini" },
   ];
-
-  models.forEach((model) => {
-    if (!model.preferred) return;
-
-    reviews.push(`${model.name} → ${model.preferred}`); // 🔥 clean format
-  });
-
-  return reviews;
 }
 
 /* ---------- SELECT BEST ---------- */
 
 export function selectBestNode(state) {
   const options = [
-    {
-      model: "GPT",
-      answer: state.gpt_refined,
-      confidence: state.gpt_confidence,
-    },
-    {
-      model: "DeepSeek",
-      answer: state.deepseek_refined,
-      confidence: state.deepseek_confidence,
-    },
-    {
-      model: "Nvidia",
-      answer: state.nvidia_refined,
-      confidence: state.nvidia_confidence,
-    },
-    {
-      model: "Gemini",
-      answer: state.gemini_refined,
-      confidence: state.gemini_confidence,
-    },
+    { model: "GPT", answer: state.gpt_refined, confidence: state.gpt_confidence },
+    { model: "DeepSeek", answer: state.deepseek_refined, confidence: state.deepseek_confidence },
+    { model: "Nvidia", answer: state.nvidia_refined, confidence: state.nvidia_confidence },
+    { model: "Gemini", answer: state.gemini_refined, confidence: state.gemini_confidence },
   ];
 
   options.sort((a, b) => b.confidence - a.confidence);
 
   return {
-    finalAnswer: options[0].answer,
-    bestModel: options[0].model,
+    finalAnswer: options[0]?.answer || "",
+    bestModel: options[0]?.model || "GPT",
     refinedAnswers: options,
     peerReviews: buildPeerReviews(state),
   };
