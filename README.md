@@ -25,7 +25,7 @@ The [Delphi Method](https://en.wikipedia.org/wiki/Delphi_method) is a structured
 | Layer | Tech |
 |---|---|
 | Frontend | React, TypeScript, Tailwind CSS, Vite |
-| Backend | Node.js, Express |
+| Backend | Node.js, Express **or** Python, FastAPI |
 | AI Orchestration | [LangGraph](https://github.com/langchain-ai/langgraphjs) |
 | Observability | [LangSmith](https://smith.langchain.com/) |
 | Models | GPT (via OpenRouter), DeepSeek (via OpenRouter), NVIDIA Nemotron (via OpenRouter), Gemini 2.5 Flash (via Google AI) |
@@ -36,7 +36,7 @@ The [Delphi Method](https://en.wikipedia.org/wiki/Delphi_method) is a structured
 
 ```
 AI_Delphi_Techique/
-├── backend/
+├── backend/                   # Node.js / Express backend
 │   └── src/
 │       ├── graph/
 │       │   ├── graph.js      # LangGraph state machine definition
@@ -44,6 +44,13 @@ AI_Delphi_Techique/
 │       │   └── state.js      # Graph state schema
 │       ├── app.js            # Express app + /api/analyze route
 │       └── index.js          # Entry point, dotenv config
+├── server/                    # Python / FastAPI backend (alternative)
+│   ├── graph/
+│   │   ├── graph.py          # LangGraph state machine definition
+│   │   └── nodes.py          # All AI model nodes (base + refine + select)
+│   ├── main.py               # FastAPI app + /api/analyze route
+│   ├── requirements.txt
+│   └── .env.example
 └── frontend/
     └── src/
         ├── pages/
@@ -79,7 +86,8 @@ AI_Delphi_Techique/
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 18+ *(for the JS backend)*
+- Python 3.10+ *(for the Python backend)*
 - OpenRouter API key → [openrouter.ai](https://openrouter.ai)
 - Google AI API key → [aistudio.google.com](https://aistudio.google.com)
 - LangSmith API key (optional, for tracing) → [smith.langchain.com](https://smith.langchain.com)
@@ -92,6 +100,10 @@ cd AI_Delphi_Techique
 ```
 
 ### 2. Backend setup
+
+Pick **one** of the two backends — both expose the same `POST /api/analyze` endpoint on port `5000`.
+
+#### Option A — Node.js (Express)
 
 ```bash
 cd backend
@@ -113,6 +125,29 @@ LANGCHAIN_PROJECT=ai-delphi-technique
 
 ```bash
 npm start
+```
+
+#### Option B — Python (FastAPI)
+
+```bash
+cd server
+pip install -r requirements.txt
+```
+
+Create a `.env` file in `/server` (copy from `.env.example`):
+
+```env
+OPENROUTER_API_KEY=<your_openrouter_api_key>
+GOOGLE_API_KEY=<your_google_api_key>
+
+# Optional — LangSmith tracing
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_API_KEY=<your_langsmith_api_key>
+LANGCHAIN_PROJECT=ai-delphi-technique
+```
+
+```bash
+uvicorn main:app --port 5000 --reload
 ```
 
 ### 3. Frontend setup
