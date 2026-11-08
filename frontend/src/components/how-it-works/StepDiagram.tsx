@@ -22,7 +22,7 @@ const steps = [
     icon: Users,
     color: 'from-violet-500 to-violet-600',
     description:
-      'Multiple AI models (GPT, Gemini, Claude, DeepSeek) independently analyze your question. Each brings unique training, perspectives, and reasoning approaches.',
+      'Your selected models (GPT, Gemini, NVIDIA, and DeepSeek) independently analyze your question. Each brings different perspectives and reasoning approaches.',
     details: [
       'Independent analysis by each model',
       'Diverse reasoning approaches',

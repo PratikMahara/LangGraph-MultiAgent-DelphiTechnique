@@ -26,7 +26,7 @@ The [Delphi Method](https://en.wikipedia.org/wiki/Delphi_method) is a structured
 |---|---|
 | Frontend | React, TypeScript, Tailwind CSS, Vite |
 | Backend | Node.js, Express **or** Python, FastAPI |
-| AI Orchestration | [LangGraph](https://github.com/langchain-ai/langgraphjs) |
+| AI Orchestration | [DeepAgents](https://docs.langchain.com/oss/javascript/deepagents/overview) on [LangGraph](https://github.com/langchain-ai/langgraphjs) |
 | Observability | [LangSmith](https://smith.langchain.com/) |
 | Models | GPT (via OpenRouter), DeepSeek (via OpenRouter), NVIDIA Nemotron (via OpenRouter), Gemini 2.5 Flash (via Google AI) |
 
@@ -36,15 +36,15 @@ The [Delphi Method](https://en.wikipedia.org/wiki/Delphi_method) is a structured
 
 ```
 AI_Delphi_Techique/
-├── backend/                   # Node.js / Express backend
+├── backend/                   # Primary Node.js / Express backend
 │   └── src/
 │       ├── graph/
-│       │   ├── graph.js      # LangGraph state machine definition
-│       │   ├── nodes.js      # All AI model nodes (base + refine + select)
+│       │   ├── graph.js      # Ordered Delphi workflow using DeepAgents
+│       │   ├── nodes.js      # Per-model DeepAgents and result selection
 │       │   └── state.js      # Graph state schema
 │       ├── app.js            # Express app + /api/analyze route
 │       └── index.js          # Entry point, dotenv config
-├── server/                    # Python / FastAPI backend (alternative)
+├── server/                    # Experimental Python / FastAPI alternative
 │   ├── graph/
 │   │   ├── graph.py          # LangGraph state machine definition
 │   │   └── nodes.py          # All AI model nodes (base + refine + select)
@@ -86,79 +86,26 @@ AI_Delphi_Techique/
 
 ### Prerequisites
 
-- Node.js 18+ *(for the JS backend)*
-- Python 3.10+ *(for the Python backend)*
+- Node.js 20+ and npm
 - OpenRouter API key → [openrouter.ai](https://openrouter.ai)
 - Google AI API key → [aistudio.google.com](https://aistudio.google.com)
 - LangSmith API key (optional, for tracing) → [smith.langchain.com](https://smith.langchain.com)
 
-### 1. Clone the repo
+### Setup and run
+
+From the project root:
+
+1. If needed, create `backend/.env` from `.env.example` (`cp .env.example backend/.env`), then set `OPENROUTER_API_KEY` and `GOOGLE_API_KEY`. These are needed for the default selection of all four models. The OpenRouter key is used for the OpenRouter-backed DeepAgents; no Anthropic key is required. For LangSmith tracing, create the `ai-delphi-technique` agent in an agent-based LangSmith workspace and set `LANGSMITH_API_KEY`; the example configures tracing to the `production` environment.
+2. Install dependencies and start both the API and frontend:
 
 ```bash
-git clone https://github.com/<your-username>/AI_Delphi_Techique.git
-cd AI_Delphi_Techique
-```
-
-### 2. Backend setup
-
-Pick **one** of the two backends — both expose the same `POST /api/analyze` endpoint on port `5000`.
-
-#### Option A — Node.js (Express)
-
-```bash
-cd backend
-npm install
-```
-
-Create a `.env` file in `/backend`:
-
-```env
-PORT=5000
-OPENROUTER_API_KEY=<your_openrouter_api_key>
-GOOGLE_API_KEY=<your_google_api_key>
-
-# Optional — LangSmith tracing
-LANGCHAIN_TRACING_V2=true
-LANGCHAIN_API_KEY=<your_langsmith_api_key>
-LANGCHAIN_PROJECT=ai-delphi-technique
-```
-
-```bash
-npm start
-```
-
-#### Option B — Python (FastAPI)
-
-```bash
-cd server
-pip install -r requirements.txt
-```
-
-Create a `.env` file in `/server` (copy from `.env.example`):
-
-```env
-OPENROUTER_API_KEY=<your_openrouter_api_key>
-GOOGLE_API_KEY=<your_google_api_key>
-
-# Optional — LangSmith tracing
-LANGCHAIN_TRACING_V2=true
-LANGCHAIN_API_KEY=<your_langsmith_api_key>
-LANGCHAIN_PROJECT=ai-delphi-technique
-```
-
-```bash
-uvicorn main:app --port 5000 --reload
-```
-
-### 3. Frontend setup
-
-```bash
-cd ../frontend
 npm install
 npm run dev
 ```
 
-The app will be running at `http://localhost:5173`
+Open `http://localhost:5173`. The frontend proxies `/api` requests to the Node API on port `5000` (override the proxy target with `VITE_API_PROXY_TARGET` in the root `.env`). The Node API reads `backend/.env`; provider and LangSmith keys are never sent to the browser. The health endpoint at `http://localhost:5000/api/health` shows whether required providers are configured without revealing key values.
+
+The Python/FastAPI implementation in `server/` is an experimental alternative and is not started by the default command.
 
 ---
 
@@ -173,19 +120,18 @@ The app will be running at `http://localhost:5173`
 }
 ```
 
-**Response:**
+**Request body:**
 ```json
 {
-  "finalAnswer": "...",
-  "bestModel": "GPT",
-  "refinedAnswers": [
-    { "model": "gpt", "answer": "...", "confidence": 88 },
-    { "model": "deepseek", "answer": "...", "confidence": 75 },
-    { "model": "nvidia", "answer": "...", "confidence": 70 },
-    { "model": "gemini", "answer": "...", "confidence": 82 }
-  ]
+  "prompt": "What is the best way to learn machine learning?",
+  "mode": "delphi",
+  "models": ["GPT", "DeepSeek", "NVIDIA", "Gemini"]
 }
 ```
+
+`mode` can be `fast` (initial answers only) or `delphi` (answers are refined and compared). `models` can include any non-empty selection of `GPT`, `DeepSeek`, `NVIDIA`, and `Gemini`.
+
+The response contains the selected `finalAnswer`, `bestModel`, its `confidence`, per-model `refinedAnswers`, `peerReviews`, an explanation, and a timestamp. Successful results are saved in the browser's local history.
 
 ---
 

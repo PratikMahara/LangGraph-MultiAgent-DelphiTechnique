@@ -4,10 +4,12 @@ import ReasoningPanel from "../components/app/ReasoningPanel";
 import PeerReview from "../components/app/PeerReview";
 import ConsensusCard from "../components/app/ConsensusCard";
 import { ModelName, ConsensusResult } from "../types";
+import { analyzePrompt } from "../utils/api";
 
 export default function ConsensusApp() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ConsensusResult | null>(null);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleSubmit = async (
     prompt: string,
@@ -16,68 +18,12 @@ export default function ConsensusApp() {
   ) => {
     setLoading(true);
     setResult(null);
+    setErrorMessage("");
 
     try {
-      const response = await fetch("http://localhost:5000/api/analyze", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ prompt }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Backend failed");
-      }
-
-      const apiData = await response.json();
-      console.log("API DATA:", apiData);
-
-      // ✅ SAFE MODEL NAME MAP
-      const modelMap: any = {
-        gpt: "GPT",
-        gemini: "Gemini",
-        claude: "Claude",
-        deepseek: "DeepSeek",
-        nvidia: "Nvidia",
-      };
-
-      // ✅ Transform backend → UI format
-      const modelResponses = apiData.refinedAnswers.map((item: any) => {
-        let cleanAnswer = item.answer;
-
-        // 🔥 Fix NVIDIA JSON issue
-        try {
-          if (cleanAnswer.includes("{")) {
-            const parsed = JSON.parse(
-              cleanAnswer.replace(/```json|```/g, "").trim()
-            );
-            cleanAnswer = parsed.answer;
-          }
-        } catch {}
-
-        return {
-          model: modelMap[item.model?.toLowerCase()] || "Unknown",
-          status: "completed",
-          response: cleanAnswer || "No response available",
-          confidence: item.confidence ?? 0,
-        };
-      });
-
-      const formattedResult: ConsensusResult = {
-        id: "live-" + Date.now(),
-        prompt,
-        modelResponses,
-        peerReviews: [],
-        finalAnswer: apiData.finalAnswer || "No final answer",
-        confidence: 90,
-        explanation: "Generated via multi-model consensus",
-        timestamp: new Date().toISOString(),
-      };
-
-      setResult(formattedResult);
+      setResult(await analyzePrompt(prompt, mode, models));
     } catch (error) {
-      console.error("Error:", error);
+      setErrorMessage(error instanceof Error ? error.message : "The analysis could not be completed.");
     } finally {
       setLoading(false);
     }
@@ -99,6 +45,12 @@ export default function ConsensusApp() {
 
         {/* Input */}
         <PromptInput onSubmit={handleSubmit} loading={loading} />
+
+        {errorMessage && (
+          <div role="alert" className="mx-auto max-w-5xl rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300">
+            {errorMessage}
+          </div>
+        )}
 
         {/* Results */}
         {result && (

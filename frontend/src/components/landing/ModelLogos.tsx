@@ -1,10 +1,10 @@
 import { motion } from 'framer-motion';
-import { Brain, Sparkles, Zap, Box } from 'lucide-react';
+import { Brain, Sparkles, Zap, Cpu } from 'lucide-react';
 
 const models = [
   { name: 'GPT', icon: Brain, color: 'text-green-400' },
   { name: 'Gemini', icon: Sparkles, color: 'text-blue-400' },
-  { name: 'Claude', icon: Box, color: 'text-orange-400' },
+  { name: 'NVIDIA', icon: Cpu, color: 'text-lime-400' },
   { name: 'DeepSeek', icon: Zap, color: 'text-purple-400' },
 ];
 

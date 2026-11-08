@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import Card from '../common/Card';
-import { ChevronDown, ChevronUp, TrendingUp, MessageSquare, Clock } from 'lucide-react';
+import { ChevronDown, TrendingUp, MessageSquare, Clock } from 'lucide-react';
 import { ConsensusResult } from '../../types';
 
 interface HistoryItemProps {

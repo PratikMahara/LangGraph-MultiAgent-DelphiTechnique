@@ -1,4 +1,4 @@
-export type ModelName = 'GPT' | 'Gemini' | 'Claude' | 'DeepSeek';
+export type ModelName = 'GPT' | 'Gemini' | 'DeepSeek' | 'NVIDIA';
 
 export type ModelStatus = 'thinking' | 'reviewing' | 'completed' | 'failed';
 

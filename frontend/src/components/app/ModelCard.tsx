@@ -3,28 +3,27 @@ import Card from '../common/Card';
 import {
   Brain,
   Sparkles,
-  Box,
+  Cpu,
   Zap,
   CheckCircle,
   XCircle,
   Loader2,
 } from 'lucide-react';
-import { ModelResponse } from '../../types';
+import type { LucideIcon } from 'lucide-react';
+import type { ModelName, ModelResponse } from '../../types';
 
-// ✅ Icons mapping
-const modelIcons: Record<string, any> = {
+const modelIcons: Record<ModelName, LucideIcon> = {
   GPT: Brain,
   Gemini: Sparkles,
-  Claude: Box,
   DeepSeek: Zap,
+  NVIDIA: Cpu,
 };
 
-// ✅ Colors mapping
-const modelColors: Record<string, string> = {
+const modelColors: Record<ModelName, string> = {
   GPT: 'text-green-400',
   Gemini: 'text-blue-400',
-  Claude: 'text-orange-400',
   DeepSeek: 'text-purple-400',
+  NVIDIA: 'text-lime-400',
 };
 
 // ✅ Status config
@@ -60,11 +59,8 @@ interface ModelCardProps {
 }
 
 export default function ModelCard({ modelResponse }: ModelCardProps) {
-  // ✅ SAFE ICON (fixes blank crash)
-  const Icon = modelIcons[modelResponse.model] || Brain;
-
-  // ✅ SAFE COLOR
-  const color = modelColors[modelResponse.model] || 'text-gray-400';
+  const Icon = modelIcons[modelResponse.model];
+  const color = modelColors[modelResponse.model];
 
   const statusInfo = statusConfig[modelResponse.status];
   const StatusIcon = statusInfo.icon;

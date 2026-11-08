@@ -107,7 +107,7 @@ async def deepseek_node(state: dict) -> dict:
 
 
 async def nvidia_node(state: dict) -> dict:
-    content = await safe_call("nvidia/llama-3.1-nemotron-70b-instruct", [{"role": "user", "content": state["question"]}])
+    content = await safe_call("nvidia/nemotron-3-nano-30b-a3b", [{"role": "user", "content": state["question"]}])
     return {"nvidia": content}
 
 
@@ -149,7 +149,7 @@ async def deepseek_refine_node(state: dict) -> dict:
 
 async def nvidia_refine_node(state: dict) -> dict:
     content = await safe_call(
-        "nvidia/llama-3.1-nemotron-70b-instruct",
+        "nvidia/nemotron-3-nano-30b-a3b",
         [{"role": "user", "content": build_refine_prompt(
             state["nvidia"],
             f"GPT:{state['gpt']}\nDeepSeek:{state['deepseek']}\nGemini:{state['gemini']}",

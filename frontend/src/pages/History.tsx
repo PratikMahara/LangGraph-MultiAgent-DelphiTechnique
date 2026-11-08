@@ -11,6 +11,7 @@ export default function History() {
   const [filteredHistory, setFilteredHistory] = useState<ConsensusResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     loadHistory();
@@ -35,9 +36,7 @@ export default function History() {
       setHistory(data);
       setFilteredHistory(data);
     } catch (error) {
-      console.error('Error loading history:', error);
-      setHistory(mockHistory);
-      setFilteredHistory(mockHistory);
+      setErrorMessage(error instanceof Error ? error.message : 'Could not load saved history.');
     } finally {
       setLoading(false);
     }
@@ -81,7 +80,11 @@ export default function History() {
           </div>
         </motion.div>
 
-        {loading ? (
+        {errorMessage ? (
+          <div role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300">
+            {errorMessage}
+          </div>
+        ) : loading ? (
           <div className="flex items-center justify-center py-20">
             <LoadingSpinner size="lg" text="Loading your history..." />
           </div>
@@ -119,76 +122,3 @@ export default function History() {
     </div>
   );
 }
-
-const mockHistory: ConsensusResult[] = [
-  {
-    id: '1',
-    prompt: 'What are the most effective strategies for reducing carbon emissions in urban areas?',
-    finalAnswer:
-      'Based on consensus analysis, the most effective strategies include: implementing comprehensive public transportation systems, incentivizing electric vehicle adoption, promoting green building standards, expanding urban green spaces, and establishing emission zones in city centers.',
-    confidence: 89,
-    explanation:
-      'All models agreed on the importance of multi-faceted approaches. Public transportation received unanimous support, while there was strong consensus on the effectiveness of policy interventions combined with infrastructure improvements.',
-    modelResponses: [
-      {
-        model: 'GPT',
-        status: 'completed',
-        response: 'Focus on public transportation, EV infrastructure, and green building codes.',
-        confidence: 87,
-      },
-      {
-        model: 'Gemini',
-        status: 'completed',
-        response: 'Comprehensive public transit, emission zones, and urban forestry programs.',
-        confidence: 91,
-      },
-      {
-        model: 'Claude',
-        status: 'completed',
-        response: 'Multi-modal transportation, green infrastructure, and policy incentives.',
-        confidence: 88,
-      },
-    ],
-    peerReviews: [
-      {
-        reviewer: 'GPT',
-        reviewed: 'Gemini',
-        agreement: 'agree',
-        comment: 'Strong alignment on transportation and policy measures.',
-      },
-    ],
-    timestamp: new Date(Date.now() - 86400000).toISOString(),
-  },
-  {
-    id: '2',
-    prompt: 'How can small businesses leverage AI without large budgets?',
-    finalAnswer:
-      'Small businesses can leverage AI cost-effectively through: using no-code AI platforms, adopting SaaS-based AI tools, focusing on high-impact use cases, utilizing open-source solutions, and starting with incremental implementations.',
-    confidence: 85,
-    explanation:
-      'Models converged on practical, budget-conscious approaches. There was strong agreement on starting small and using existing platforms rather than custom development.',
-    modelResponses: [
-      {
-        model: 'GPT',
-        status: 'completed',
-        response: 'No-code platforms and SaaS solutions provide affordable entry points.',
-        confidence: 83,
-      },
-      {
-        model: 'Claude',
-        status: 'completed',
-        response: 'Focus on specific problems with existing tools rather than custom AI.',
-        confidence: 87,
-      },
-    ],
-    peerReviews: [
-      {
-        reviewer: 'Claude',
-        reviewed: 'GPT',
-        agreement: 'agree',
-        comment: 'Practical approach focusing on existing solutions is most viable.',
-      },
-    ],
-    timestamp: new Date(Date.now() - 172800000).toISOString(),
-  },
-];

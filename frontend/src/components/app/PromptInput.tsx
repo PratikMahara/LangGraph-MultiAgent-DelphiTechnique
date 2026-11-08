@@ -20,7 +20,7 @@ const steps = [
   "GPT thinking...",
   "GPT replying...",
   "Consulting Gemini...",
-  "Claude refining...",
+  "NVIDIA refining...",
   "DeepSeek analyzing...",
   "Finalizing answer...",
 ];
@@ -67,8 +67,8 @@ export default function PromptInput({ onSubmit, loading }: PromptInputProps) {
   const [selectedModels, setSelectedModels] = useState<ModelName[]>([
     "GPT",
     "Gemini",
-    "Claude",
     "DeepSeek",
+    "NVIDIA",
   ]);
 
   const toggleModel = (model: ModelName) => {
@@ -147,7 +147,7 @@ export default function PromptInput({ onSubmit, loading }: PromptInputProps) {
                 Models
               </label>
               <div className="grid grid-cols-2 gap-2">
-                {(["GPT", "Gemini", "Claude", "DeepSeek"] as ModelName[]).map(
+                {(["GPT", "Gemini", "DeepSeek", "NVIDIA"] as ModelName[]).map(
                   (model) => (
                     <button
                       key={model}
