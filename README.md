@@ -1,166 +1,236 @@
-# 🧠 AI Delphi Technique — Multi-Model Consensus Platform
+<div align="center">
 
-> Ask a question. Four AI models answer, challenge each other, refine their responses, and converge on the single best answer — inspired by the **Delphi Method**.
+# 🧠 AI Delphi Technique
 
-<!-- Replace with a screenshot or demo gif of the landing page -->
-![Landing Page](https://res.cloudinary.com/pratikmahara/image/upload/v1781514544/Screenshot_2026-06-15_082226_jctj8o.png)
+### One question. Multiple AI perspectives. A more considered answer.
+
+An AI consensus workspace where four model selections independently answer a question, review one another, and refine their responses—bringing the Delphi method to multi-model AI.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?logo=nodedotjs&logoColor=white)
+![AI orchestration](https://img.shields.io/badge/AI-DeepAgents%20%2B%20LangGraph-7353BA)
+
+<br />
+
+<a href="https://res.cloudinary.com/pratikmahara/image/upload/v1781514544/Screenshot_2026-06-15_082226_jctj8o.png">
+  <img src="https://res.cloudinary.com/pratikmahara/image/upload/v1781514544/Screenshot_2026-06-15_082226_jctj8o.png" alt="AI Delphi Technique application preview" width="88%" />
+</a>
+
+<br />
+
+[Get started](#-get-started) · [How it works](#-how-it-works) · [API](#-api)
+
+</div>
 
 ---
 
-## What is the Delphi Technique?
+## ✨ Why AI Delphi?
 
-The [Delphi Method](https://en.wikipedia.org/wiki/Delphi_method) is a structured process where a panel of experts independently answer questions, review each other's answers, and iteratively refine their views until a consensus emerges. This project applies that idea to AI — replacing human experts with **GPT, DeepSeek, NVIDIA Nemotron, and Gemini**.
+The Delphi method gathers independent expert opinions, shares perspectives, and refines responses toward a stronger conclusion. This project applies that process to AI: compare answers from **GPT, DeepSeek, NVIDIA, and Gemini**, then review the most confident result.
 
----
+- **Compare perspectives** — choose any combination of the four model options.
+- **Refine or move fast** — use Delphi mode for a review round, or Fast mode for initial answers only.
+- **Inspect the reasoning trail** — review model responses, confidence, and peer selections.
+- **Keep a local history** — successful analyses are saved in your browser.
+- **Trace runs with LangSmith** — optional observability for the backend agent workflow.
 
-## How It Works
+## 🔄 How it works
 
-![Landing Page](https://res.cloudinary.com/pratikmahara/image/upload/v1781514395/Gemini_Generated_Image_wy75z4wy75z4wy75_dlfdtt.png)
+```mermaid
+flowchart LR
+    A[Your question] --> B[Selected models answer]
+    B --> C{Mode}
+    C -->|Fast| D[Choose in selected-model order]
+    C -->|Delphi| E[Models review and refine]
+    E --> F[Choose the highest-confidence answer]
+    D --> G[Consensus result]
+    F --> G
+```
 
+In Delphi mode, each selected model produces a response, reviews the other responses, and returns a refined answer with a confidence score. Fast mode skips refinement and selects the first available response in the order you submitted. The app shows the selected answer, model responses, and peer-review summary.
 
----
+## 🖼️ Screenshots
 
-## Tech Stack
+<details>
+<summary>Explore the app</summary>
 
-| Layer | Tech |
+| Consensus workspace | Model responses | Final answer |
+|---|---|---|
+| ![Consensus workspace](https://res.cloudinary.com/pratikmahara/image/upload/v1781514745/Screenshot_2026-06-15_091212_hzfkfe.png) | ![Model responses and peer review](https://res.cloudinary.com/pratikmahara/image/upload/v1781514958/0e4e385e-00f3-42f1-ae7c-f16995f82b87.png) | ![Final consensus answer](https://res.cloudinary.com/pratikmahara/image/upload/v1781514994/49ade31b-afad-4de0-a3c0-4fdecadb51ca.png) |
+
+</details>
+
+## 🧰 Tech stack
+
+| Area | Technology |
 |---|---|
 | Frontend | React, TypeScript, Tailwind CSS, Vite |
-| Backend | Node.js, Express **or** Python, FastAPI |
-| AI Orchestration | [DeepAgents](https://docs.langchain.com/oss/javascript/deepagents/overview) on [LangGraph](https://github.com/langchain-ai/langgraphjs) |
-| Observability | [LangSmith](https://smith.langchain.com/) |
-| Models | GPT (via OpenRouter), DeepSeek (via OpenRouter), NVIDIA Nemotron (via OpenRouter), Gemini 2.5 Flash (via Google AI) |
+| Primary backend | Node.js, Express |
+| Agent workflow | DeepAgents on LangGraph |
+| OpenRouter models | GPT, DeepSeek, and NVIDIA selections |
+| Google model | Gemini |
+| Observability | LangSmith |
+| Experimental alternative | Python, FastAPI, and LangGraph |
 
----
+## 🚀 Get started
 
-## Project Structure
+### Requirements
 
-```
-AI_Delphi_Techique/
-├── backend/                   # Primary Node.js / Express backend
-│   └── src/
-│       ├── graph/
-│       │   ├── graph.js      # Ordered Delphi workflow using DeepAgents
-│       │   ├── nodes.js      # Per-model DeepAgents and result selection
-│       │   └── state.js      # Graph state schema
-│       ├── app.js            # Express app + /api/analyze route
-│       └── index.js          # Entry point, dotenv config
-├── server/                    # Experimental Python / FastAPI alternative
-│   ├── graph/
-│   │   ├── graph.py          # LangGraph state machine definition
-│   │   └── nodes.py          # All AI model nodes (base + refine + select)
-│   ├── main.py               # FastAPI app + /api/analyze route
-│   ├── requirements.txt
-│   └── .env.example
-└── frontend/
-    └── src/
-        ├── pages/
-        │   ├── Landing.tsx
-        │   ├── ConsensusApp.tsx   # Main app page
-        │   ├── HowItWorks.tsx
-        │   └── History.tsx
-        ├── components/
-        │   ├── app/               # PromptInput, ReasoningPanel, PeerReview, ConsensusCard
-        │   ├── landing/           # Hero, Features
-        │   └── common/
-        ├── types/index.ts
-        └── utils/api.ts
+- Node.js 20 or later and npm
+- An [OpenRouter API key](https://openrouter.ai/) for GPT, DeepSeek, and NVIDIA
+- A [Google AI API key](https://aistudio.google.com/) for Gemini
+- A [LangSmith API key](https://smith.langchain.com/) if you want tracing
+
+### 1. Configure the backend
+
+From the project root, create a local backend environment file from the example:
+
+```bash
+cp .env.example backend/.env
 ```
 
----
+Add your provider keys to `backend/.env`:
 
-## Screenshots
+```dotenv
+OPENROUTER_API_KEY=your-openrouter-key
+GOOGLE_API_KEY=your-google-ai-key
+```
 
-<!-- Replace with actual screenshots -->
+The backend loads this file at startup. Provider keys stay on the server and are not sent to the browser. `backend/.env` is ignored by Git—never commit your real keys.
 
-| Page | Preview |
-|---|---|
-| Landing | ![Landing](https://res.cloudinary.com/pratikmahara/image/upload/v1781514544/Screenshot_2026-06-15_082226_jctj8o.png) |
-| Consensus App | ![App](https://res.cloudinary.com/pratikmahara/image/upload/v1781514745/Screenshot_2026-06-15_091212_hzfkfe.png) |
-| Reasoning Panel | ![Reasoning](https://res.cloudinary.com/pratikmahara/image/upload/v1781514958/0e4e385e-00f3-42f1-ae7c-f16995f82b87.png) |
-| Final Answer | ![Final Answer](https://res.cloudinary.com/pratikmahara/image/upload/v1781514994/49ade31b-afad-4de0-a3c0-4fdecadb51ca.png) |
-| LangSmith Trace | ![LangSmith](https://res.cloudinary.com/pratikmahara/image/upload/v1781514252/WhatsApp_Image_2026-06-15_at_14.47.35_d2mzsg.jpg) |
-
----
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 20+ and npm
-- OpenRouter API key → [openrouter.ai](https://openrouter.ai)
-- Google AI API key → [aistudio.google.com](https://aistudio.google.com)
-- LangSmith API key (optional, for tracing) → [smith.langchain.com](https://smith.langchain.com)
-
-### Setup and run
+### 2. Install and start
 
 From the project root:
-
-1. If needed, create `backend/.env` from `.env.example` (`cp .env.example backend/.env`), then set `OPENROUTER_API_KEY` and `GOOGLE_API_KEY`. These are needed for the default selection of all four models. The OpenRouter key is used for the OpenRouter-backed DeepAgents; no Anthropic key is required. For LangSmith tracing, create the `ai-delphi-technique` agent in an agent-based LangSmith workspace and set `LANGSMITH_API_KEY`; the example configures tracing to the `production` environment.
-2. Install dependencies and start both the API and frontend:
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open `http://localhost:5173`. The frontend proxies `/api` requests to the Node API on port `5000` (override the proxy target with `VITE_API_PROXY_TARGET` in the root `.env`). The Node API reads `backend/.env`; provider and LangSmith keys are never sent to the browser. The health endpoint at `http://localhost:5000/api/health` shows whether required providers are configured without revealing key values.
+The development command starts both the backend and frontend. Open **http://localhost:5173**.
 
-The Python/FastAPI implementation in `server/` is an experimental alternative and is not started by the default command.
+| Service | Default address |
+|---|---|
+| Frontend | http://localhost:5173 |
+| Backend API | http://localhost:5000 |
+| Health check | http://localhost:5000/api/health |
 
----
+The Vite development server proxies `/api` requests to the backend. Set `VITE_API_PROXY_TARGET` in the **root** `.env` file to override the proxy target. Server settings such as `PORT` and `CORS_ORIGINS` belong in `backend/.env`.
 
-## API
+### Optional: LangSmith tracing
+
+1. In an agent-based LangSmith workspace, create an agent with ID `ai-delphi-technique` and a `production` environment.
+2. Set `LANGSMITH_API_KEY` in `backend/.env`.
+3. Keep `LANGSMITH_TRACING=true` and `LANGSMITH_ENDPOINT=https://api.smith.langchain.com`, then restart the backend.
+
+The example also includes `LANGSMITH_AGENT_ID` and `LANGSMITH_AGENT_ENVIRONMENT`. No Anthropic API key is required for the current provider setup.
+
+## 🗂️ Project layout
+
+```text
+.
+├── backend/                  # Primary Node.js / Express API
+│   ├── src/
+│   │   ├── graph/
+│   │   │   ├── graph.js      # Ordered analysis workflow
+│   │   │   └── nodes.js      # Model calls, refinement, and selection
+│   │   ├── app.js            # API routes and validation
+│   │   ├── env.js            # Loads backend/.env
+│   │   └── index.js          # HTTP server entry point
+│   └── test/                 # Backend tests
+├── frontend/
+│   └── src/
+│       ├── components/       # Reusable UI
+│       ├── pages/            # App pages
+│       ├── types/            # Shared frontend types
+│       └── utils/            # API client and local history
+├── server/                   # Experimental Python / FastAPI alternative
+├── .env.example              # Environment-variable template
+└── package.json              # npm workspaces and root commands
+```
+
+The default `npm run dev` command uses the **Node.js backend**. The Python/FastAPI implementation is an experimental alternative and is not launched by the root development command.
+
+## 🔌 API
 
 ### `POST /api/analyze`
 
-**Request body:**
-```json
-{
-  "prompt": "What is the best way to learn machine learning?"
-}
-```
+Analyze a prompt with one or more model selections.
 
-**Request body:**
+**Request**
+
 ```json
 {
-  "prompt": "What is the best way to learn machine learning?",
+  "prompt": "What makes a city a good place to live?",
   "mode": "delphi",
   "models": ["GPT", "DeepSeek", "NVIDIA", "Gemini"]
 }
 ```
 
-`mode` can be `fast` (initial answers only) or `delphi` (answers are refined and compared). `models` can include any non-empty selection of `GPT`, `DeepSeek`, `NVIDIA`, and `Gemini`.
+- `prompt` — required, non-empty string (up to 20,000 characters).
+- `mode` — `fast` or `delphi`; defaults to `delphi`.
+- `models` — a non-empty selection of `GPT`, `DeepSeek`, `NVIDIA`, and `Gemini`; defaults to all four.
 
-The response contains the selected `finalAnswer`, `bestModel`, its `confidence`, per-model `refinedAnswers`, `peerReviews`, an explanation, and a timestamp. Successful results are saved in the browser's local history.
+**Response**
+
+```json
+{
+  "finalAnswer": "The selected model's answer...",
+  "bestModel": "Gemini",
+  "confidence": 92,
+  "explanation": "Selected Gemini's refined response using the model's reported confidence.",
+  "refinedAnswers": [
+    { "model": "GPT", "answer": "A model response...", "confidence": 78 },
+    { "model": "Gemini", "answer": "A refined response...", "confidence": 92 }
+  ],
+  "peerReviews": [
+    {
+      "reviewer": "GPT",
+      "reviewed": "Gemini",
+      "agreement": "agree",
+      "comment": "GPT selected Gemini's response as the closest match."
+    }
+  ],
+  "timestamp": "2026-01-01T12:00:00.000Z"
+}
+```
+
+The response includes the selected answer, per-model answers and confidence, peer-review summaries, an explanation, and a timestamp. Successful analyses are stored in the browser's local history (up to 50 entries).
+
+### `GET /api/health`
+
+Returns API status and whether OpenRouter and Google credentials are configured. It does **not** expose key values.
+
+## 🧪 Development commands
+
+Run these from the project root:
+
+| Command | Description |
+|---|---|
+| `npm run dev` | Start the backend and frontend |
+| `npm run dev:backend` | Start only the Node.js backend |
+| `npm run dev:frontend` | Start only the frontend |
+| `npm test --workspace backend` | Run backend tests |
+| `npm run build` | Build the frontend for production |
+| `npm run lint` | Lint the frontend |
+| `npm run typecheck` | Type-check the frontend |
+
+## 📈 LangSmith
+
+When enabled, LangSmith helps inspect agent runs and diagnose model or workflow behavior.
+
+![LangSmith trace dashboard](https://res.cloudinary.com/pratikmahara/image/upload/v1781514254/WhatsApp_Image_2026-06-15_at_14.48.18_zw7dsq.jpg)
+
+## 📄 License
+
+Distributed under the MIT License. See [`LICENSE`](./LICENSE) for details.
 
 ---
 
-## LangSmith Observability
+<div align="center">
 
-This project supports full LangGraph tracing via LangSmith. Each run is traced with:
-- All node executions (base + refine + select)
-- Token usage per model
-- Confidence scores over time
-- Full message history
+Made for curious questions and better-informed answers.
 
-<!-- Replace with LangSmith dashboard screenshot -->
-![LangSmith Dashboard](https://res.cloudinary.com/pratikmahara/image/upload/v1781514254/WhatsApp_Image_2026-06-15_at_14.48.18_zw7dsq.jpg)
-
----
-
-## Models Used
-
-| Model | Provider | Purpose |
-|---|---|---|
-| `openai/gpt-oss-120b` | OpenRouter | Base + Refine |
-| `tngtech/deepseek-r1t2-chimera` | OpenRouter | Base + Refine |
-| `nvidia/nemotron-3-nano-30b-a3b` | OpenRouter | Base + Refine |
-| `gemini-2.5-flash` | Google AI | Base + Refine |
-
----
-
-## License
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-
-This project is licensed under the MIT License — see the [LICENSE](./LICENSE) file for details.
+</div>
