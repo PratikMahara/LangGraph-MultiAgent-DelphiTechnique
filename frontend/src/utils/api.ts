@@ -38,7 +38,7 @@ export const analyzePrompt = async (
   models: ModelName[]
 ): Promise<ConsensusResult> => {
   try {
-    const { data } = await api.post<AnalysisResponse>('/analyze', { prompt, mode, models });
+    const { data } = await api.post<AnalysisResponse>('/api/analyze', { prompt, mode, models });
     const result: ConsensusResult = {
       id: `${Date.now()}`,
       prompt,
