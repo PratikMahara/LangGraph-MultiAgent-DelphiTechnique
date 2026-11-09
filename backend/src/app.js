@@ -12,7 +12,7 @@ const allowedOrigins = (process.env.CORS_ORIGINS )
   .map((origin) => origin.trim())
   .filter(Boolean);
 
-app.use(cors({ origin: allowedOrigins }));s
+app.use(cors({ origin: allowedOrigins }));
 app.use(express.json({ limit: "32kb" }));
 
 const graph = createGraph();
