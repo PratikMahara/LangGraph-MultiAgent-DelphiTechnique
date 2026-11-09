@@ -7,12 +7,12 @@ import { createGraph } from "./graph/graph.js";
 
 const app = express();
 const availableModels = ["GPT", "DeepSeek", "NVIDIA", "Gemini"];
-const allowedOrigins = (process.env.CORS_ORIGINS || "http://localhost:5173")
+const allowedOrigins = (process.env.CORS_ORIGINS )
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
 
-app.use(cors({ origin: allowedOrigins }));
+app.use(cors({ origin: allowedOrigins }));s
 app.use(express.json({ limit: "32kb" }));
 
 const graph = createGraph();
