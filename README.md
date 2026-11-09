@@ -117,17 +117,11 @@ The development command starts both the backend and frontend. Open **http://loca
 | Backend API | http://localhost:5000 |
 | Health check | http://localhost:5000/api/health |
 
-The Vite development server proxies `/api` requests to the backend. Set `VITE_API_PROXY_TARGET` in the **root** `.env` file to override the proxy target. Server settings such as `PORT` and `CORS_ORIGINS` belong in `backend/.env`.
+The Vite development server proxies `/api` requests to the backend. Set `VITE_API_PROXY_TARGET` in the **root** `.env` file to override the proxy target. Server settings such as `PORT` belong in `backend/.env`.
 
 ### Deploying on Render
 
-On the Render **backend web service**, set `CORS_ORIGINS` to the exact origin(s) serving the frontend, including `https://` and excluding any path or trailing slash. For example:
-
-```text
-CORS_ORIGINS=https://your-frontend.onrender.com
-```
-
-For multiple frontend origins, separate them with commas. Save the setting and redeploy or restart the backend. `CORS_ORIGINS` defaults to `http://localhost:5173` for local development. Avoid setting it to `*` unless the API is intentionally public to browser requests from any origin.
+The API allows browser requests from any origin, so no CORS environment variable is required. This is appropriate only if the API is intended to be publicly accessible to any website.
 
 ### Optional: LangSmith tracing
 

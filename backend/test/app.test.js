@@ -55,34 +55,20 @@ test("API health and request validation work without provider keys", async (t) =
 
   const address = server.address();
   const baseUrl = `http://127.0.0.1:${address.port}`;
-  const allowedOrigins = (process.env.CORS_ORIGINS || "http://localhost:5173")
-    .split(",")
-    .map((origin) => origin.trim())
-    .filter(Boolean);
-  const wildcardOrigin = allowedOrigins.includes("*");
-  const allowedOrigin = wildcardOrigin ? "https://frontend.example.com" : allowedOrigins[0];
 
   const preflightResponse = await fetch(`${baseUrl}/api/analyze`, {
     method: "OPTIONS",
     headers: {
-      origin: allowedOrigin,
+      origin: "https://any-frontend.example.com",
       "access-control-request-method": "POST",
       "access-control-request-headers": "content-type",
     },
   });
   assert.equal(preflightResponse.status, 204);
-  assert.equal(
-    preflightResponse.headers.get("access-control-allow-origin"),
-    wildcardOrigin ? "*" : allowedOrigin,
-  );
-  if (!wildcardOrigin) {
-    const disallowedResponse = await fetch(`${baseUrl}/api/health`, {
-      headers: { origin: "https://unconfigured.example.com" },
-    });
-    assert.equal(disallowedResponse.headers.get("access-control-allow-origin"), null);
-  }
+  assert.equal(preflightResponse.headers.get("access-control-allow-origin"), "*");
 
   const healthResponse = await fetch(`${baseUrl}/api/health`);
+  assert.equal(healthResponse.headers.get("access-control-allow-origin"), "*");
   assert.equal(healthResponse.status, 200);
   assert.deepEqual(await healthResponse.json(), {
     status: "ok",
