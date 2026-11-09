@@ -24,8 +24,8 @@ const MODEL_FACTORIES = {
       apiKey: process.env.OPENROUTER_API_KEY,
       configuration: { baseURL: OPENROUTER_BASE_URL },
     }),
-  "heygen/heygen-voice-1-turbo:free": () =>
-   initChatModel("heygen/heygen-voice-1-turbo:free", {
+  "xingchen-agi/xing4.0-29b-a4b:free": () =>
+   initChatModel("xingchen-agi/xing4.0-29b-a4b:free", {
       modelProvider: "openai",
       apiKey: process.env.OPENROUTER_API_KEY,
       configuration: { baseURL: OPENROUTER_BASE_URL },
@@ -116,7 +116,7 @@ export async function nvidiaNode(state) {
 export async function geminiNode(state) {
   if (!isSelected(state, "Gemini")) return { gemini: "" };
   const content = await safeCall({
-    model: "heygen/heygen-voice-1-turbo:free",
+    model: "xingchen-agi/xing4.0-29b-a4b:free",
     messages: [{ role: "user", content: state.question }],
   });
   return { gemini: content };
