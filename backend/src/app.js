@@ -7,7 +7,7 @@ import { createGraph } from "./graph/graph.js";
 
 const app = express();
 const availableModels = ["GPT", "DeepSeek", "NVIDIA", "Gemini"];
-const allowedOrigins = (process.env.CORS_ORIGINS )
+const allowedOrigins = "*"
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
