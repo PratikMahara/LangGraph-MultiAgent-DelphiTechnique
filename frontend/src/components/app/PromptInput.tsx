@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import Button from "../common/Button";
 import Card from "../common/Card";
 import { Send, Zap, GitBranch } from "lucide-react";
@@ -14,62 +14,58 @@ interface PromptInputProps {
   loading: boolean;
 }
 
-// 🔥 AI Steps
 const steps = [
-  "Connecting to GPT...",
-  "GPT thinking...",
-  "GPT replying...",
-  "Consulting Gemini...",
-  "NVIDIA refining...",
-  "DeepSeek analyzing...",
-  "Finalizing answer...",
+  "Sending your question to the selected models",
+  "Models are preparing their responses",
+  "Comparing perspectives and confidence",
+  "Preparing your consensus answer",
 ];
-
-// 🔥 Fancy Loading Text
-function FancyLoadingText() {
-  const [step, setStep] = useState(0);
-
-  useEffect(() => {
-    let i = 0;
-    const interval = setInterval(() => {
-      i = (i + 1) % steps.length;
-      setStep(i);
-    }, 1200);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <motion.span
-      key={step}
-      initial={{ opacity: 0, y: 5 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="relative text-sm font-medium"
-    >
-      {/* 🌈 Gradient Text */}
-      <span className="bg-gradient-to-r from-blue-400 via-violet-400 to-pink-400 bg-clip-text text-transparent">
-        {steps[step]}
-      </span>
-
-      {/* ✨ Shimmer */}
-      <motion.span
-        className="absolute inset-0 bg-white/20 blur-sm"
-        animate={{ opacity: [0, 0.3, 0] }}
-        transition={{ duration: 1.5, repeat: Infinity }}
-      />
-    </motion.span>
-  );
-}
 
 export default function PromptInput({ onSubmit, loading }: PromptInputProps) {
   const [prompt, setPrompt] = useState("");
   const [mode, setMode] = useState<"fast" | "delphi">("delphi");
+  const [progress, setProgress] = useState(0);
+  const [loadingStep, setLoadingStep] = useState(0);
+  const [showProgress, setShowProgress] = useState(false);
+  const requestStartedAt = useRef<number | null>(null);
   const [selectedModels, setSelectedModels] = useState<ModelName[]>([
     "GPT",
     "Gemini",
     "DeepSeek",
     "NVIDIA",
   ]);
+
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | undefined;
+    let finishTimeout: ReturnType<typeof setTimeout> | undefined;
+
+    if (loading) {
+      requestStartedAt.current = Date.now();
+      setProgress(1);
+      setLoadingStep(0);
+      setShowProgress(true);
+      interval = setInterval(() => {
+        const startedAt = requestStartedAt.current;
+        if (startedAt === null) return;
+        const elapsed = Date.now() - startedAt;
+        setProgress(Math.min(97, Math.floor(1 + (1 - Math.exp(-elapsed / 14000)) * 96)));
+        setLoadingStep(Math.min(steps.length - 1, Math.floor(elapsed / 5000)));
+      }, 200);
+    } else if (requestStartedAt.current !== null) {
+      setProgress(100);
+      setLoadingStep(steps.length - 1);
+      finishTimeout = setTimeout(() => {
+        setShowProgress(false);
+        setProgress(0);
+        requestStartedAt.current = null;
+      }, 700);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+      if (finishTimeout) clearTimeout(finishTimeout);
+    };
+  }, [loading]);
 
   const toggleModel = (model: ModelName) => {
     setSelectedModels((prev) =>
@@ -228,11 +224,85 @@ export default function PromptInput({ onSubmit, loading }: PromptInputProps) {
                   <Send className="w-5 h-5" />
                 </>
               ) : (
-                <FancyLoadingText />
+                <>
+                  <motion.span
+                    className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                  />
+                  <span>Analyzing perspectives...</span>
+                </>
               )}
 
             </span>
           </Button>
+
+          <AnimatePresence>
+            {showProgress && (
+              <motion.div
+                role="status"
+                aria-live="polite"
+                initial={{ opacity: 0, y: 10, height: 0 }}
+                animate={{ opacity: 1, y: 0, height: "auto" }}
+                exit={{ opacity: 0, y: -6, height: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="rounded-xl border border-violet-500/20 bg-gray-950/60 p-4 sm:p-5">
+                  <div className="mb-3 flex items-center justify-between gap-4">
+                    <div className="min-w-0">
+                      <AnimatePresence mode="wait">
+                        <motion.p
+                          key={loadingStep}
+                          initial={{ opacity: 0, y: 5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -5 }}
+                          className="truncate text-sm font-medium text-gray-200"
+                        >
+                          {progress === 100 ? "Request finished" : steps[loadingStep]}
+                        </motion.p>
+                      </AnimatePresence>
+                      <p className="mt-1 text-xs text-gray-500">
+                        {progress === 100
+                          ? "The request has completed."
+                          : "Progress is an estimate while we wait for the models."}
+                      </p>
+                    </div>
+                    <motion.span
+                      key={progress}
+                      initial={{ opacity: 0.5, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="shrink-0 font-mono text-lg font-semibold tabular-nums text-violet-300"
+                    >
+                      {progress}%
+                    </motion.span>
+                  </div>
+
+                  <div
+                    role="progressbar"
+                    aria-label="Estimated analysis progress"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={progress}
+                    className="h-2 overflow-hidden rounded-full bg-gray-800"
+                  >
+                    <motion.div
+                      className="relative h-full rounded-full bg-gradient-to-r from-blue-500 via-violet-500 to-pink-400"
+                      animate={{ width: `${progress}%` }}
+                      transition={{ duration: 0.35, ease: "easeOut" }}
+                    >
+                      {loading && (
+                        <motion.div
+                          className="absolute inset-y-0 w-16 bg-gradient-to-r from-transparent via-white/50 to-transparent"
+                          animate={{ x: [-64, 280] }}
+                          transition={{ duration: 1.4, repeat: Infinity, ease: "linear" }}
+                        />
+                      )}
+                    </motion.div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
         </div>
       </Card>
