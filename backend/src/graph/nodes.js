@@ -25,7 +25,7 @@ const MODEL_FACTORIES = {
       configuration: { baseURL: OPENROUTER_BASE_URL },
     }),
   "google:gemini-2.5-flash": () =>
-   initChatModel("google/gemma-4-31b-it:free", {
+   initChatModel("cohere/north-mini-code:free", {
       modelProvider: "openai",
       apiKey: process.env.OPENROUTER_API_KEY,
       configuration: { baseURL: OPENROUTER_BASE_URL },
