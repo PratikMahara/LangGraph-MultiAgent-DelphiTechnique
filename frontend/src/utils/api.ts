@@ -2,7 +2,9 @@ import axios from 'axios';
 import type { AgreementLevel, ConsensusResult, ModelName, ModelResponse } from '../types';
 
 const api = axios.create({
-  baseURL: 'https://langgraph-multiagent-delphitechnique.onrender.com',
+  baseURL:
+    import.meta.env.VITE_API_BASE_URL ||
+    'https://langgraph-multiagent-delphitechnique.onrender.com/api',
   headers: {
     'Content-Type': 'application/json',
   },

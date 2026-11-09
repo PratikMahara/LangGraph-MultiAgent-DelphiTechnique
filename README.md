@@ -117,11 +117,11 @@ The development command starts both the backend and frontend. Open **http://loca
 | Backend API | http://localhost:5000 |
 | Health check | http://localhost:5000/api/health |
 
-The Vite development server proxies `/api` requests to the backend. Set `VITE_API_PROXY_TARGET` in the **root** `.env` file to override the proxy target. Server settings such as `PORT` belong in `backend/.env`.
+The Vite development server proxies `/api` requests to the backend. Set `VITE_API_PROXY_TARGET` in the **root** `.env` file to override the proxy target. The frontend's production API URL is configured with `VITE_API_BASE_URL` (including the `/api` path); server settings such as `PORT` belong in `backend/.env`.
 
 ### Deploying on Render
 
-The API allows browser requests from any origin, so no CORS environment variable is required. This is appropriate only if the API is intended to be publicly accessible to any website.
+The API allows browser requests from any origin, so no CORS environment variable is required. In the Render **frontend service**, set `VITE_API_BASE_URL` to the backend URL ending in `/api` (for example, `https://langgraph-multiagent-delphitechnique.onrender.com/api`) and redeploy the frontend. This is appropriate only if the API is intended to be publicly accessible to any website.
 
 ### Optional: LangSmith tracing
 
