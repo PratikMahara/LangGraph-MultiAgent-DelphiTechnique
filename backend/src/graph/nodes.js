@@ -13,7 +13,7 @@ const MODEL_FACTORIES = {
       configuration: { baseURL: OPENROUTER_BASE_URL },
     }),
   "deepseek/deepseek-chat": () =>
-    initChatModel("liquid/lfm-3-1.7b:free", {
+    initChatModel("dots-studio/dots-3-note-preview:free", {
       modelProvider: "openai",
       apiKey: process.env.OPENROUTER_API_KEY,
       configuration: { baseURL: OPENROUTER_BASE_URL },
@@ -25,10 +25,10 @@ const MODEL_FACTORIES = {
       configuration: { baseURL: OPENROUTER_BASE_URL },
     }),
   "google:gemini-2.5-flash": () =>
-    new ChatGoogleGenerativeAI({
-      model: "gemini-3.8-flash",
-      apiKey: process.env.GOOGLE_API_KEY,
-      temperature: 0.7,
+   initChatModel("google/gemma-4-31b-it:free", {
+      modelProvider: "openai",
+      apiKey: process.env.OPENROUTER_API_KEY,
+      configuration: { baseURL: OPENROUTER_BASE_URL },
     }),
 };
 
