@@ -7,12 +7,14 @@ import { createGraph } from "./graph/graph.js";
 
 const app = express();
 const availableModels = ["GPT", "DeepSeek", "NVIDIA", "Gemini"];
-const allowedOrigins = "*"
-  .split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean);
+const allowedOrigins = "https://langgraph-multiagent-delphitechnique.onrender.com"
 
-app.use(cors({ origin: allowedOrigins }));
+
+app.use(
+  cors({
+    origin: allowedOrigins.includes("*") ? "*" : allowedOrigins,
+  }),
+);
 app.use(express.json({ limit: "32kb" }));
 
 const graph = createGraph();

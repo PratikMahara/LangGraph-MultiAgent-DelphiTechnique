@@ -119,6 +119,16 @@ The development command starts both the backend and frontend. Open **http://loca
 
 The Vite development server proxies `/api` requests to the backend. Set `VITE_API_PROXY_TARGET` in the **root** `.env` file to override the proxy target. Server settings such as `PORT` and `CORS_ORIGINS` belong in `backend/.env`.
 
+### Deploying on Render
+
+On the Render **backend web service**, set `CORS_ORIGINS` to the exact origin(s) serving the frontend, including `https://` and excluding any path or trailing slash. For example:
+
+```text
+CORS_ORIGINS=https://your-frontend.onrender.com
+```
+
+For multiple frontend origins, separate them with commas. Save the setting and redeploy or restart the backend. `CORS_ORIGINS` defaults to `http://localhost:5173` for local development. Avoid setting it to `*` unless the API is intentionally public to browser requests from any origin.
+
 ### Optional: LangSmith tracing
 
 1. In an agent-based LangSmith workspace, create an agent with ID `ai-delphi-technique` and a `production` environment.
